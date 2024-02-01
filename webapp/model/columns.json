@@ -1,0 +1,27 @@
+{
+    "PRDOUTPUTHDR":[
+        {"name": "IONO", "position": 0, "type": "Edm.String", "visible": true, "required": false, "width": "120px", "hideOnChange": false, "showable": true, "sort": "Ascending",
+            "valueHelp": {"show": false, "source": "", "value": "", "desc": ""}}
+    ],
+    "detail":[
+        {"ColumnName": "DLVSEQ", 
+        "ValueHelp": {"show": true, "items": {"path": "COMPONENT_MODEL", "value": "DLVSEQ", "text": "IONO"},
+            "SuggestionItems": {"path": "COMPONENT_MODEL>/", "text": "{COMPONENT_MODEL>DLVSEQ}", "additionalText": "{COMPONENT_MODEL>IONO}", "maxSuggestionWidth": "500px"},
+            "columns": "tvh_dlv"
+        }
+    }
+    ],
+    "tvh_dlv": [
+        {"ColumnName": "DLVSEQ", "DataType": "STRING", "ColumnWidth": "200px", "Visible": true, "Key": true, "Value": false},
+        {"ColumnName": "CPONO", "DataType": "STRING", "ColumnWidth": "200px", "Visible": true, "Key": false, "Value": false},
+        {"ColumnName": "REVDLVDT", "DataType": "STRING", "ColumnWidth": "200px", "Visible": true, "Key": false, "Value": true},
+        {"ColumnName": "IONO", "DataType": "STRING", "ColumnWidth": "200px", "Visible": false, "Key": false, "Value": true}
+        
+    ],
+    "PRODOB":[
+        {"name": "IONO", "position": 0, "type": "Edm.String", "visible": true, "required": false, "width": "120px", "hideOnChange": false, "showable": true, "sort": "Ascending",
+            "valueHelp": {"show": false, "source": "", "value": "", "desc": ""}}
+    ]
+    
+
+}

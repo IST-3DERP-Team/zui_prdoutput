@@ -1,0 +1,39 @@
+<core:FragmentDefinition
+		xmlns="sap.m"
+        xmlns:f="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+        xmlns:t="sap.ui.table"
+        xmlns:plugins="sap.ui.table.plugins"
+        id="fragment-1" 
+        fragmentName="fragment1">
+    <Dialog contentWidth="1000px"
+        contentHeight="400px"
+        title="Production Output Breakdown"
+        resizable="true"
+        draggable="true"
+        afterOpen="afterOpenCreateGMC">
+        <!--<beginButton>
+			<Button type="Emphasized" text="Select" press="onSelectMovement" width="4rem" />
+		</beginButton>-->
+        <!--<endButton>
+			<Button text="Cancel" press="closeOutputBreakdown"/>
+		</endButton>-->
+        <t:Table id="OBTab" fixedColumnCount="1" class="sapUiSizeCompact sidePadding" visibleRowCountMode="Auto" showColumnVisibilityMenu="true" enableColumnFreeze="true" enableCellFilter="true" selectionMode="Single" selectionBehavior="RowOnly">
+            <!--<t:rowSettingsTemplate>
+                <t:RowSettings highlight="{= ${EDITED} === true ? 'Warning' : null}" />
+            </t:rowSettingsTemplate>-->
+
+            <t:extension>
+                <Toolbar>
+                    <ToolbarSpacer />
+                    <!--Button id="btnEditOB" type="Ghost" icon="sap-icon://edit" press="onEditOB()" tooltip="Edit" visible="{mode>/createMode}" />-->
+                    <!--<Button id="btnRefreshIODet" type="Ghost" icon="sap-icon://refresh" press="reloadIOData('IODETTab','/IODETSet')" tooltip="Refresh" visible="false" />-->
+                    <Button id="btnSaveOB" type="Ghost" icon="sap-icon://save" press="onSaveOB" tooltip="{ddtext>/SAVE}" visible="{modes>/saveBtn}" />
+                    <Button id="btnCancelIODet" type="Ghost" icon="sap-icon://sys-cancel" press="closeOutputBreakdown" tooltip="{ddtext>/CANCEL}" visible="true" />
+                </Toolbar>
+            </t:extension>
+        </t:Table>
+    </Dialog>
+</core:FragmentDefinition>
+
+
