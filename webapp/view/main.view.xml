@@ -15,6 +15,7 @@
     xmlns:sv="sap.ui.comp.smartvariants"
     xmlns:layout="sap.ui.layout"
     xmlns:t="sap.ui.table" 
+    xmlns:u="sap.ui.unified"
     xmlns:plugins="sap.ui.table.plugins"> 
     <Page id="page" enableScrolling="false" class="sapUiNoContentPadding" showHeader="false">
         <!-- <dependents>
@@ -235,6 +236,14 @@
                                         press="onRefresh"
                                         tooltip="{ddtext>/REFRESH}"
                                         visible="true"/>
+                                    <MenuButton id="grpbtnUploadExcel" icon="sap-icon://upload" text="Upload Excel" visible = "true">
+                                        <menu>
+                                            <Menu>
+                                                <MenuItem id="btnUploadExcelFG" text="FG" press="onUploadExcel('FG')"/>
+                                                <MenuItem id="btnUploadExcelProc" text="Process" press="onUploadExcel('PROC')"/>
+                                            </Menu>
+                                        </menu>
+                                    </MenuButton>
                                     <!-- <Button id="btnFullScreenDtls" 
                                             icon="sap-icon://full-screen"
                                             press="onTableResize('Dtls','Max')"

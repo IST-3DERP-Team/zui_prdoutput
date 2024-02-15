@@ -1,0 +1,32 @@
+<core:FragmentDefinition
+		xmlns="sap.m"
+        xmlns:f="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+        xmlns:uit="sap.ui.table"
+        xmlns:form="sap.ui.layout.form"
+        xmlns:u="sap.ui.unified"
+        id="fragment-excelupload" 
+        fragmentName="excelupload">
+    <Dialog contentWidth="1200px"
+        contentHeight="500px"
+        title="Preview"
+        resizable="true"
+        draggable="true">
+        <content>
+            <VBox fitContainer="true">
+                <uit:Table id="excelPreviewTab"
+                    selectionMode="None"
+                    selectionBehavior="Row"
+                    visibleRowCountMode="Auto"
+                    class="sapUiTinyMargin">
+                    <uit:layoutData>
+                        <FlexItemData growFactor="1" baseSize="0%"/>
+                    </uit:layoutData> 
+                </uit:Table> 
+            </VBox>
+        </content> 
+        <buttons>
+            <Button icon="sap-icon://decline" text="{ddtext>/CLOSE}" tooltip="{ddtext>/CLOSE}" press="onCloseExcelPreview" />
+        </buttons>        
+    </Dialog>
+</core:FragmentDefinition>

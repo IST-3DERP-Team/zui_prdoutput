@@ -1,0 +1,106 @@
+<core:FragmentDefinition
+		xmlns="sap.m"
+        xmlns:f="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+        xmlns:uit="sap.ui.table"
+        xmlns:form="sap.ui.layout.form"
+        xmlns:u="sap.ui.unified"
+        id="fragment-excelupload" 
+        fragmentName="excelupload">
+    <Dialog contentWidth="525px"
+        contentHeight="600px"
+        title="Upload From Excel"
+        resizable="true"
+        draggable="true">
+        <content>
+            <VBox fitContainer="true">
+                <Panel height="200px" class="sapUiNoContentPadding hdrFormBgColor">
+                    <Toolbar class="sapUiTinyMarginBeginEnd">
+                        <ToolbarSpacer/>
+                            <u:FileUploader sameFilenameAllowed="true" iconOnly="false" buttonOnly="true" fileType="XLSX,xlsx"
+                                icon="sap-icon://upload" iconFirst="true" tooltip="{ddtext>/BROWSE}" buttonText="{ddtext>/SELFILE}" change="onUploadExcelData"/>
+                        <Button id="btnXUPreview" icon="sap-icon://table-view" text="{ddtext>/PREVIEWDATA}" tooltip="{ddtext>/PREVIEWDATA}" press="onPreviewExcelData" visible="true" />
+                    </Toolbar>
+
+                    <form:Form editable="true" class="sapUiNoContentPadding">
+                        <form:layout>
+                            <form:ResponsiveGridLayout
+                                labelSpanXL="4"
+                                labelSpanL="4"
+                                labelSpanM="4"
+                                labelSpanS="12"
+                                adjustLabelSpan="false"
+                                emptySpanXL="0"
+                                emptySpanL="0"
+                                emptySpanM="0"
+                                emptySpanS="0"
+                                columnsXL="2"
+                                columnsL="2"
+                                columnsM="1" 
+                                singleContainerFullSize="false" />
+                        </form:layout>
+                        <form:formContainers>
+                            <form:FormContainer ariaLabelledBy="Grp1" class="sapUiNoContentPadding">
+                                <form:formElements>
+                                    <form:FormElement label="Mapping">
+                                        <form:fields>
+                                            <ComboBox id="cboxExcelMapId"
+                                                change="onExcelMappingChange"
+                                                items="{
+                                                    path: 'excelmapping>/'
+                                                }">
+                                                <core:Item key="{excelmapping>MAPID}" text="{excelmapping>MAPDESC}" />
+                                            </ComboBox>
+                                        </form:fields>
+                                    </form:FormElement>
+                                    <form:FormElement label="">
+                                        <form:fields>
+                                            <CheckBox id="xuWithHdrInd" text="With Header" select="onWithHdrIndChange"></CheckBox>
+                                            <CheckBox id="xuDefaultInd" text="Default" select="onDefaultIndChange"></CheckBox>
+                                        </form:fields>
+                                    </form:FormElement>
+                                </form:formElements>
+                            </form:FormContainer>
+                        </form:formContainers>
+                    </form:Form>
+                    <layoutData>
+                        <FlexItemData growFactor="0" />
+                    </layoutData>
+                </Panel>
+                <uit:Table id="excelMapTab"
+                    rows="{mapfield>/}"
+                    selectionMode="None"
+                    selectionBehavior="Row"
+                    visibleRowCountMode="Auto"
+                    class="sapUiTinyMargin">
+                    <uit:columns>
+                        <uit:Column width="250px">
+                            <Label text="Source" wrapping="true"/>
+                            <uit:template>
+                                <Text text="{mapfield>XLSFIELD}" />
+                            </uit:template>
+                        </uit:Column>
+                        <uit:Column width="250px">
+                            <Label text="Destination" wrapping="true"/>
+                            <uit:template>
+                                <ComboBox selectedKey="{mapfield>TBLFIELD}"
+                                    items="{
+                                        path: 'tablefield>/'
+                                    }">
+                                    <core:Item key="{tablefield>FIELDNAME}" text="{tablefield>FIELDDESC}" />
+                                </ComboBox>
+                            </uit:template>
+                        </uit:Column>                                     
+                    </uit:columns>
+                    <uit:layoutData>
+                        <FlexItemData growFactor="1" baseSize="0%"/>
+                    </uit:layoutData> 
+                </uit:Table> 
+            </VBox>
+        </content> 
+        <buttons>
+            <Button id="btnXUValidate" icon="sap-icon://accept" text="{ddtext>/EXECUTE}" tooltip="{ddtext>/EXECUTE}" press="onValidateExcelData" visible="true" />
+            <Button id="btnXUCancel" icon="sap-icon://decline" text="{ddtext>/CANCEL}" tooltip="{ddtext>/CANCEL}" press="onCancelExcelUpload" visible="true" />
+        </buttons>        
+    </Dialog>
+</core:FragmentDefinition>

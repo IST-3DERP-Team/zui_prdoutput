@@ -12,11 +12,14 @@ sap.ui.define([
     "../js/TableValueHelp",
     "../js/TableFilter",
     'jquery.sap.global',
+    "../libs/xlsx",
+    "../libs/jszip",
+    "../js/ExcelUpload",
 ],
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
-    function (Controller, JSONModel, MessageBox, Common, Filter, FilterOperator, HashChanger, Token, ColumnListItem, Label, TableValueHelp, TableFilter, jQuery) {
+    function (Controller, JSONModel, MessageBox, Common, Filter, FilterOperator, HashChanger, Token, ColumnListItem, Label, TableValueHelp, TableFilter, jQuery, xlsx, jszip, ExcelUpload) {
         "use strict";
         var me;
         var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({ pattern: "MM/dd/yyyy" });
@@ -120,6 +123,11 @@ sap.ui.define([
                 oDDTextParam.push({ CODE: "INFO_DATA_COPIED" });
                 oDDTextParam.push({ CODE: "WRAP" });
                 oDDTextParam.push({ CODE: "UNWRAP" });
+                oDDTextParam.push({ CODE: "SELFILE" });
+                oDDTextParam.push({ CODE: "EXECUTE" });
+                oDDTextParam.push({ CODE: "PREVIEWDATA" });
+                oDDTextParam.push({ CODE: "ERRORREMARKS" });
+                oDDTextParam.push({ CODE: "UPLOADED" });
 
                 oModel.create("/CaptionMsgSet", { CaptionMsgItems: oDDTextParam }, {
                     method: "POST",
@@ -283,10 +291,11 @@ sap.ui.define([
                         success: function (oData, oResponse) {
                             oJSONCommonDataModel.setData([]);
                             me.getView().getModel("ui").setProperty("/process", "");
+                            console.log(oData)
                             if (oData.results.length > 0) {
                                 me.isHasPOB(oData.results[0].PROCESSCD).then(function (hasPOB) {
                                     if (hasPOB) {
-                                        me.byId("btnOutputBreakdown").setEnabled(true);
+                                        me.byId("btnOutputBreakdown").setEnabled(true);                                        
                                     }
                                     else {
                                         me.byId("btnOutputBreakdown").setEnabled(false);
@@ -300,7 +309,22 @@ sap.ui.define([
                                     me.byId("btnAddDtl").setEnabled(true);
                                     me.byId("btnEditDtl").setEnabled(true);
                                     me.byId("btnDeleteDtl").setEnabled(true);
+                                    me.byId("grpbtnUploadExcel").setEnabled(true);
                                     //me.byId("btnRefreshDtls").setEnabled(true);
+
+                                    if (oData.results.filter(fItem => fItem.HASPOB === "X").length > 0) {
+                                        me.byId("btnUploadExcelFG").setEnabled(true);
+                                    }
+                                    else {
+                                        me.byId("btnUploadExcelFG").setEnabled(false);
+                                    }
+
+                                    if (oData.results.filter(fItem => fItem.HASPOB === "").length > 0) {
+                                        me.byId("btnUploadExcelProc").setEnabled(true);
+                                    }
+                                    else {
+                                        me.byId("btnUploadExcelProc").setEnabled(false);
+                                    }
 
                                     oJSONCommonDataModel.setData(oData);
                                     me.getView().setModel(oJSONCommonDataModel, "processData");
@@ -341,6 +365,7 @@ sap.ui.define([
                                 me.byId("btnEditDtl").setEnabled(false);
                                 me.byId("btnOutputBreakdown").setEnabled(false);
                                 me.byId("btnDeleteDtl").setEnabled(false);
+                                me.byId("grpbtnUploadExcel").setEnabled(false);
                                 //me.byId("btnRefreshDtls").setEnabled(false);
                                 oJSONCommonDataModel.setData("");
                                 me.getView().setModel(oJSONCommonDataModel, "processData");
@@ -640,6 +665,7 @@ sap.ui.define([
                             this.byId("searchFieldDtl").setVisible(false);
                             this.byId("btnOutputBreakdown").setVisible(false);
                             this.byId("btnExitFullScreenDtl").setVisible(false);
+                            this.byId("grpbtnUploadExcel").setVisible(false);
 
                             this.byId("btnRefreshHdr").setEnabled(false);
                             this.byId("searchFieldHdr").setEnabled(false);
@@ -749,6 +775,7 @@ sap.ui.define([
                         this.byId("btnFullScreenDtl").setVisible(false);
                         this.byId("btnTabLayoutDtl").setVisible(false);
                         this.byId("btnDataWrapDtls").setVisible(false);
+                        this.byId("grpbtnUploadExcel").setVisible(false);
 
                         //this.byId("btnFullScreenHdr").setEnabled(false);
                         this.byId("btnUploadOutput").setEnabled(false);
@@ -840,6 +867,7 @@ sap.ui.define([
                             this.byId("btnDeleteDtl").setEnabled(true);
                             this.byId("btnRefreshDtl").setEnabled(true);
                             //this.byId("searchFieldDtl").setEnabled(true);
+                            this.byId("grpbtnUploadExcel").setEnabled(true);
                         }
                         else if (this._sActiveTable === "detailTab") {
 
@@ -856,6 +884,7 @@ sap.ui.define([
                             this.byId("btnUploadOutput").setEnabled(true);
                             this.byId("btnRefreshHdr").setEnabled(true);
                             this.byId("smartFilterBar").setVisible(true);
+                            this.byId("grpbtnUploadExcel").setVisible(true);
 
                             this.byId("btnFullScreenDtl").setVisible(true);
                             this.byId("btnTabLayoutDtl").setVisible(true);
@@ -902,6 +931,7 @@ sap.ui.define([
                 this.byId("btnUploadOutput").setEnabled(true);
                 this.byId("btnRefreshHdr").setEnabled(true);
                 this.byId("searchFieldHdr").setEnabled(true);
+                this.byId("grpbtnUploadExcel").setVisible(true);
 
                 this.byId("btnFullScreenDtl").setVisible(true);
                 this.byId("btnTabLayoutDtl").setVisible(true);
@@ -1863,6 +1893,7 @@ sap.ui.define([
                             data.results.sort((a, b) => parseInt(a.Custcolor) - parseInt(b.Custcolor) && parseInt(a.AttribSeq) - parseInt(b.AttribSeq));
                             this.OBSizes = data.results;
                             this.getStyleBOMUV(SEQNO);
+                            console.log(data)
                             resolve();  // Resolve the Promise once data is loaded and processed
                         },
                         error: (err) => {
@@ -2553,7 +2584,7 @@ sap.ui.define([
                             }
                         } else {
                             bProceed = false;
-                            MessageBox.warning("Actual Start Date must be earlier than Actual Finish Date");
+                            MessageBox.warning("Actual Start Date must be earlier than or equal to Actual Finish Date");
                             return;
                         }
 
@@ -3063,6 +3094,7 @@ sap.ui.define([
                         this.byId("btnDeleteDtl").setEnabled(true);
                         this.byId("btnRefreshDtl").setEnabled(true);
                         this.byId("searchFieldDtl").setEnabled(true);
+                        this.byId("grpbtnUploadExcel").setEnabled(true);
                     }
                     else if (this._sActiveTable === "detailTab") {
                         this.byId("btnAddDtl").setVisible(true);
@@ -3075,6 +3107,7 @@ sap.ui.define([
                         // this.byId("btnCopyDtl").setVisible(false);
                         //this.byId("btnAddNewDtl").setVisible(false);
                         //this.byId("searchFieldDtl").setVisible(true);
+                        this.byId("grpbtnUploadExcel").setVisible(true);
 
                         //this.byId("btnAddHdr").setEnabled(true);
                         // this.byId("btnEditHdr").setEnabled(true);
@@ -3123,6 +3156,7 @@ sap.ui.define([
                 this.byId("btnUploadOutput").setEnabled(true);
                 this.byId("btnRefreshHdr").setEnabled(true);
                 this.byId("smartFilterBar").setVisible(true);
+                this.byId("grpbtnUploadExcel").setVisible(true);
 
                 this.byId("btnFullScreenDtl").setVisible(true);
                 this.byId("btnTabLayoutDtl").setVisible(true);
@@ -3461,5 +3495,364 @@ sap.ui.define([
                 }
 
             },
+    
+            //******************************************* */
+            // Excel Upload
+            //******************************************* */
+
+            onUploadExcel(e) {
+                var me = this;
+                var sSection = "", sDestTable = "";
+
+                if (e === "FG") {
+                    sSection = "DTL-FG";
+                    sDestTable = "Z3DERP_PRDOUTFGR";
+                    
+                    var vIONO = this.getView().getModel("ui").getData().activeIONO;
+                    var oModel = this.getOwnerComponent().getModel();
+
+                    oModel.read('/OutputBreakdownSizesSet', {
+                        urlParameters: {
+                            "$filter": "Iono eq '" + vIONO + "'"
+                        },
+                        success: (oResult, oResponse) => {
+                            var uniqueColor = [...new Set(oResult.results.map(i => i.Custcolor))];
+                            var uniqueSize = [...new Set(oResult.results.map(i => i.Custsize))];
+                            console.log(oResult.results)
+
+                            me._FGColorSize = oResult.results;
+                            me._FGColors = uniqueColor;
+                            me._FGSizes = uniqueSize;
+                        },
+                        error: (err) => { }
+                    });
+                }
+                else {
+                    sSection = "DTL-PROC";
+                    sDestTable = "ZERP_IOPROCOUT";
+                }
+
+                ExcelUpload.onUpload(this, "VER", "PRODOUTPUT", sSection , sDestTable);
+            },
+
+            onUploadExcelData: function(oEvent) {
+                ExcelUpload.onUploadExcel(oEvent);
+            },
+
+            onValidateExcelData: function(oEvent) {
+                ExcelUpload.onValidate();
+            },
+
+            onCancelExcelUpload: function(oEvent) {
+                ExcelUpload.onCancelUpload();
+            },
+
+            onExcelMappingChange: function(oEvent) {
+                ExcelUpload.onMappingChange(oEvent);
+            },
+
+            onNewExcelMapping: function(oEvent) {
+                ExcelUpload.onNewMapping(oEvent);
+            },
+
+            onUpdateExcelMapping: function(oEvent) {
+                ExcelUpload.onUpdateMapping(oEvent);
+            },
+
+            onPrepareExcelData: function(oEvent) {
+                ExcelUpload.onPrepareData(oEvent);
+            },
+
+            onNewExcelMapIndChange: function(oEvent) {
+                ExcelUpload.onNewMapIndChange(oEvent);
+            },
+
+            onPreviewExcelData: function(oEvent) {
+                ExcelUpload.onPreviewData();
+            },
+
+            onCloseExcelPreview: function(oEvent) {
+                ExcelUpload.onClosePreview();
+            },
+
+            onCloseExcelResult: function(oEvent) {
+                ExcelUpload.onCloseResult();
+            },
+
+            saveProcess() {
+                var me = this;
+                Common.openProcessingDialog(me, "Processing...");
+
+                // var vIONO = this.getView().getModel("ui").getData().activeIONO;
+                var oModel = this.getOwnerComponent().getModel();
+                oModel.setUseBatch(true);
+                oModel.setDeferredGroups(["update"]);
+
+                var mParameters = { groupId:"update" }
+
+                this._uploadedDataToSave.forEach(item => {
+                    var param = {
+                        "POSTDT": sapDateFormat.format(new Date(item.POSTDT)) + "T00:00:00",
+                        "REFDOC": item.REFDOC === undefined ? "" : item.REFDOC,
+                        "IONO": item.IONO,
+                        "PROCESSCD": item.PROCESSCD,
+                        "SEQNO": "",
+                        "STARTDT": sapDateFormat.format(new Date(item.STARTDT)) + "T00:00:00",
+                        "FINISHDT": sapDateFormat.format(new Date(item.FINISHDT)) + "T00:00:00",
+                        "QTY": item.QTY,
+                        "MBLNR": "",
+                        "MJAHR": "",
+                        "SOLDTOCUST": "",
+                        "CPONO": "",
+                        "ASNDOCNO": "",
+                        "REMARKS": item.REMARKS === undefined ? "" : item.REMARKS,
+                        "CANCELLED": "",
+                        "DLVSEQ": parseInt(item.DLVSEQ, 10)
+                    }                    
+                    console.log(param)
+                    oModel.create("/PRDOUTPUTDTLSet", param, mParameters);
+                })
+
+                oModel.submitChanges({
+                    groupId: "update",
+                    success: function (oData, oResponse) {
+                        Common.closeProcessingDialog(me);
+                        me.byId('cboxProcess').setSelectedKey(me._uploadedDataToSave[0].PROCESSCD);
+                        // me.getDtls(me.getView().getModel("ui").getData().activeIONO, me._uploadedDataToSave[0].PROCESSCD);
+                        me._sActiveTable = "detailTab";
+                        me.refreshData();
+                        MessageBox.information("Data successfully uploaded.")
+                    },
+                    error: function (err) {
+                        Common.closeProcessingDialog(me);
+                        MessageBox.error(err.message);
+                    }
+                }) 
+            },
+
+            saveFG: async function () {
+                Common.openProcessingDialog(this, "Processing...");
+                // console.log(this._uploadedDataToSave)
+                // return;
+                var me = this;
+                var vProcess = "FN/PK";
+                var vIONO = this.getView().getModel("ui").getData().activeIONO;
+                var vUOM = this.getView().getModel("ui").getData().activeUOM;
+                var vPRODPLANT = this.getView().getModel("ui").getData().activePRODPLANT;
+                var matbatchIO = me.byId("headerTab").getModel().getData().rows.filter(item => item.IONO === vIONO);
+
+                var unique = me._uploadedDataToSave.filter((rowData, index, self) =>
+                    index === self.findIndex((t) => (t.DLVSEQ === rowData.DLVSEQ && t.STARTDT === rowData.STARTDT && t.FINISHDT === rowData.FINISHDT && t.POSTDT === rowData.POSTDT)));  
+
+                this._excelFGCount = unique.length;
+                this._excelFGCounter = 0;
+                this._excelFGMessage = "";
+
+                unique.forEach(uq => {
+                    setTimeout(() => {
+                        var aNewRows = me._uploadedDataToSave.filter(fItem => fItem.DLVSEQ === uq.DLVSEQ && fItem.STARTDT === uq.STARTDT && fItem.FINISHDT === uq.FINISHDT && fItem.POSTDT === uq.POSTDT);
+                        var aGoodsMvtHdrTab = [];
+                        var oGoodsMvtHdrTab = {};
+                        var totalQty = 0;
+                        var paramOB = [];
+                        var aGoodsMvtItemTab = [];
+                        var aMatBatch = [];
+                        var ioDtls = [];
+
+                        oGoodsMvtHdrTab = {
+                            "PstngDate": sapDateFormat.format(new Date(aNewRows[0].POSTDT)) + "T00:00:00",
+                            "DocDate": sapDateFormat.format(new Date(aNewRows[0].FINISHDT)) + "T00:00:00",
+                            "RefDocNo": aNewRows[0].REFDOC === undefined ? "" : aNewRows[0].REFDOC,
+                            "PrUname": me._userid === undefined ? "" : me._userid,
+                            "HeaderTxt": aNewRows[0].REFDOC === undefined ? "" : aNewRows[0].REFDOC
+                        }
+
+                        aGoodsMvtHdrTab.push(oGoodsMvtHdrTab);
+
+                        aNewRows.forEach(item => {
+                            var param = {};
+                            var oGoodsMvtItemTab = {};
+                            var ioDtlsParam = {};
+                            var matBatch = {};
+
+                            const filteredSize = me._FGColorSize.filter(obj => obj.Colordesc === item.COLORCD && obj.Custsize === item.SIZECD);
+                            const matno = filteredSize.map(obj => obj.Matno)[0];
+                            console.log(item.COLORCD, item.SIZECD)
+                            if (item.REFDOC === undefined) { item.REFDOC = "" }
+                            if (item.REMARKS === undefined) { item.REMARKS = "" }
+
+                            if (matno !== undefined || typeof matno !== 'undefined') {
+                                oGoodsMvtItemTab["Material"] = filteredSize.map(obj => obj.Matno)[0];
+                                oGoodsMvtItemTab["Plant"] = vPRODPLANT;
+                                oGoodsMvtItemTab["Batch"] = filteredSize.map(obj => obj.BATCH)[0]; 
+                                oGoodsMvtItemTab["MoveType"] = "915";
+                                oGoodsMvtItemTab["EntryQnt"] = item.QTY;
+                                oGoodsMvtItemTab["EntryUom"] = vUOM;
+                                oGoodsMvtItemTab["MvtInd"] = "";
+                                oGoodsMvtItemTab["Orderid"] = vIONO;
+                                oGoodsMvtItemTab["Costcenter"] = 'VHKLSC004';
+                                oGoodsMvtItemTab["StgeLoc"] = me.getView().getModel("ui").getData().fgsloc;
+                                aGoodsMvtItemTab.push(oGoodsMvtItemTab);
+
+                                matBatch["MATNO"] = filteredSize.map(obj => obj.Matno)[0];
+                                matBatch["BATCH"] = filteredSize.map(obj => obj.BATCH)[0];
+                                matBatch["IONO"] = vIONO;
+                                matBatch["CUSTGRP"] = matbatchIO[0].CUSTGRP;
+                                matBatch["SEASONCD"] = matbatchIO[0].SEASONCD;
+                                matBatch["SALESGRP"] = matbatchIO[0].SALESGRP;
+                                aMatBatch.push(matBatch);
+
+                                ioDtlsParam["ACTUALQTY"] = (isNaN(item.QTY) ? 0 : item.QTY).toString(); 
+                                ioDtlsParam["DLVSEQ"] = parseInt(item.DLVSEQ);
+                                ioDtlsParam["MATNO"] = filteredSize.map(obj => obj.Matno)[0];
+                                ioDtlsParam["BATCH"] = filteredSize.map(obj => obj.BATCH)[0];
+                                ioDtls.push(ioDtlsParam);
+
+                                param["IONO"] = vIONO;
+                                param["PROCESSCD"] = vProcess;
+                                param["SEQNO"] = "";
+                                param["COLORCD"] = filteredSize.map(obj => obj.Colorcd)[0];
+                                param["SIZECD"] = item.SIZECD;
+                                param["COLORDESC"] = filteredSize.map(obj => obj.Colordesc)[0];
+                                param["QTY"] = item.QTY;
+                                paramOB.push(param);
+
+                                totalQty = parseInt(totalQty) + parseInt(item.QTY);
+                            }                        
+                        })
+
+                        var oParamSeq = {};
+                        oParamSeq["N_GOODSMVT_CODE"] = [{ GmCode: "05" }];
+                        oParamSeq["N_GOODSMVT_HEADER"] = aGoodsMvtHdrTab;
+                        oParamSeq["N_GOODSMVT_HEADRET"] = [];
+                        oParamSeq["N_GOODSMVT_ITEM"] = aGoodsMvtItemTab;
+                        oParamSeq["N_GOODSMVT_PRINT_CTRL"] = [];
+                        oParamSeq["N_GOODSMVT_RETURN"] = [];
+                        oParamSeq["materialdocument"] = "";
+                        oParamSeq["materialdocumentyear"] = "";
+                        console.log("oParamSeq", oParamSeq);
+                        console.log(ioDtls)
+                        console.log(paramOB)
+                        // return;
+                        var oModel = this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
+                        oModel.create("/GoodsMvt_CreateSet", oParamSeq, {
+                            method: "POST",
+                            success: function (oResult, oResponse) {
+                                console.log("N_GOODSMVT_RETURN", oResult.N_GOODSMVT_RETURN.results);
+                                if (oResult.N_GOODSMVT_RETURN.results[0].Type === "S") {
+                                    me.saveIOPOB(paramOB, aNewRows, oResult.N_GOODSMVT_RETURN.results[0].Materialdocument, oResult.N_GOODSMVT_RETURN.results[0].Materialdocumentyear, totalQty, ioDtls)
+                                    // MessageBox.information(oResult.N_GOODSMVT_RETURN.results[0].Message);
+                                    me._excelFGMessage += oResult.N_GOODSMVT_RETURN.results[0].Message + "\r\n";
+                                }
+                                else {
+                                    Common.closeProcessingDialog(me);
+                                    // MessageBox.information(oResult.N_GOODSMVT_RETURN.results[0].Message);
+                                    me._excelFGMessage += oResult.N_GOODSMVT_RETURN.results[0].Message + "\r\n";
+                                }
+                            },
+                            error: function (oData, oResponse) {
+                                alert("error");
+                            }
+                        });
+                    }, 100);
+                })
+            },
+
+            saveIOPOB(paramSet, paramHdr, docno, docyr, totalQty, ioDtls) {
+                console.log("TOTALQTY: " + totalQty);
+                var oModel1 = this.getOwnerComponent().getModel();
+                // var vProcess = this.getView().getModel("ui").getData().process;
+                var vIONO = this.getView().getModel("ui").getData().activeIONO;
+                var me = this;
+
+                ioDtls.forEach((item, idx) => {
+                    oModel1.update("/OUTPUTPOSTIODLVSet(IONO='" + vIONO + "')", ioDtls[idx], {
+                        method: "PUT",
+                        success: function (data, oResponse) { },
+                        error: function (err) {
+                            Common.closeProcessingDialog(me);
+                        }
+                    });
+                });
+
+                var paramHdr1 = { ACTUALQTY: totalQty.toString() };
+                oModel1.update("/OUTPUTPOSTIOHDRDLVSet(IONO='" + vIONO + "')", paramHdr1, {
+                    method: "PUT",
+                    success: function (data, oResponse) { },
+                    error: function (err) {
+                        Common.closeProcessingDialog(me);
+                    }
+                });
+
+                var oParamDtls = {
+                    "POSTDT": sapDateFormat.format(new Date(paramHdr[0].POSTDT)) + "T00:00:00",
+                    "REFDOC": paramHdr[0].REFDOC,
+                    "IONO": vIONO,
+                    "PROCESSCD": "FN/PK",
+                    "SEQNO": "",
+                    "STARTDT": sapDateFormat.format(new Date(paramHdr[0].STARTDT)) + "T00:00:00",
+                    "FINISHDT": sapDateFormat.format(new Date(paramHdr[0].FINISHDT)) + "T00:00:00",
+                    "QTY": totalQty.toString(),
+                    "MBLNR": docno,
+                    "MJAHR": docyr,
+                    "SOLDTOCUST": "",
+                    "CPONO": "",
+                    "ASNDOCNO": "",
+                    "REMARKS": paramHdr[0].REMARKS,
+                    "CANCELLED": "",
+                    "DLVSEQ": parseInt(paramHdr[0].DLVSEQ)
+                }
+                console.log("oParamDtls", oParamDtls);
+
+                oModel1.create("/PRDOUTPUTDTLSet", oParamDtls, {
+                    method: "POST",
+                    success: function (oResult, oResponse) {
+                        var oModel = me.getOwnerComponent().getModel();
+
+                        paramSet.forEach(item => {
+                            var param = {};
+                            param["IONO"] = item["IONO"];
+                            param["PROCESSCD"] = item["PROCESSCD"];
+                            param["SEQNO"] = JSON.parse(oResponse.headers["sap-message"]).message.toString().trim();
+                            param["COLORCD"] = item["COLORCD"];
+                            param["SIZECD"] = item["SIZECD"];
+                            param["COLORDESC"] = item["COLORDESC"];
+                            param["QTY"] = item["QTY"];
+
+                            console.log("param", param);
+                            oModel.create("/OUTPUTBREAKDOWNSet", param, {
+                                method: "POST",
+                                success: function (oResult, oResponse) {
+                                    me._excelFGCounter++;
+                                    
+                                    if (me._excelFGCounter === me._excelFGCount) {
+                                        Common.closeProcessingDialog(me);
+                                        me.byId('cboxProcess').setSelectedKey("FN/PK");
+                                        me._sActiveTable = "detailTab";
+                                        me.refreshData();
+                                        me.byId("btnOutputBreakdown").setEnabled(true);
+                                        MessageBox.information(me._excelFGMessage);
+                                    }
+                                },
+                                error: function (err) {
+                                    me._excelFGCounter++;
+
+                                    if (me._excelFGCounter === me._excelFGCount) {
+                                        Common.closeProcessingDialog(me);
+                                        me.byId('cboxProcess').setSelectedKey("FN/PK");
+                                        me._sActiveTable = "detailTab";
+                                        me.refreshData();
+                                        me.byId("btnOutputBreakdown").setEnabled(true);
+                                        MessageBox.information(me._excelFGMessage);
+                                    }
+
+                                    console.log(err);
+                                }
+                            });
+                        });
+                    }
+                });
+            },
+
         });
     });
